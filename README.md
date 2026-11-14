@@ -2,68 +2,104 @@
 
 > *"The code becomes the organizer. Money and rules are enforced by Hedera, so nobody can run away with the pot, and every payment is publicly provable."*
 
-Built for the **Hedera Cross Campus Challenge 2026** (*Dar Blockchain × Hedera · 4Hacks*).  
-**Daret on Hedera** digitizes traditional Moroccan & Maghreb rotating savings circles (*Daret* / ROSCA) with arithmetic seat-based collateral `(N − k) × C`, Solidity EVM escrow, Hedera Token Service (HTS) tokens & Soulbound tier badges, Hedera Consensus Service (HCS) immutable audit logs, free Mirror Node reputation queries, and Native PRNG fair *tirage* draws.
+Built for the **Hedera Cross Campus Challenge 2026** (*Dar Blockchain × Hedera · 4Hacks*).
+
+**Daret on Hedera** digitizes traditional Moroccan & Maghreb rotating savings circles (*Daret* / ROSCA) on Hedera. Instead of relying on blind social trust, a smart contract holds seat-based collateral, draws payout order fairly, logs every contribution and payout on-chain, and builds portable savings reputation.
 
 ---
 
-## Workspace Structure
+## How It Works (In Plain English)
+
+In a traditional **Daret**, `N` people each contribute `C` MAD every round, and one person takes the full pot (`N × C`) each round until everyone has received it once.
+
+The classic problem: **someone who gets the pot in Round 1 can stop paying in Rounds 2..N.**
+
+Daret on Hedera solves this with **arithmetic seat-based collateral**:
+
+```text
+requiredCollateral = (N - k) × C × tierMultiplier
+```
+
+- `N` = total members in the circle
+- `k` = your payout round (`1` = first to receive the pot, `N` = last to receive the pot)
+- `C` = contribution per round (e.g. `250 MAD`)
+- `tierMultiplier` = discount earned from on-chain savings history
+
+**Why this works:**
+- If you take the pot **early** (`k = 1`), you still owe `(N - 1) × C`, so your locked collateral covers what you owe. Defaulting is never profitable.
+- If you take the pot **last** (`k = N`), `(N - N) = 0`, so you need **zero collateral** — making it accessible even for first-time savers.
+- If a member misses a payment, the contract **slashes their locked collateral** to keep the round's recipient whole and records the default on-chain.
+
+### Reputation Tiers
+
+| Tier | Score | Collateral Multiplier | Notes |
+| --- | --- | --- | --- |
+| **Gold** | `≥ 840` | `25%` | Proven reliable savers |
+| **Silver** | `≥ 680` | `50%` | Consistent circle history |
+| **Bronze** | `≥ 520` | `75%` | Building track record |
+| **New** | Cold start | `100%` | Prevents fake-wallet resets; can still join late seats at low/zero collateral |
+| **Defaulter** | Flagged | `100%` (Blocked) | Rejected by `minTier` circle gates |
+
+---
+
+## Hedera Services Used
+
+| Service | Role in Daret on Hedera |
+| --- | --- |
+| **Hedera Smart Contracts (EVM)** | Enforces circle rules, holds pot & collateral escrow, executes payouts and slashing |
+| **Hedera Token Service (HTS)** | Handles tokenized MAD contributions and Soulbound reputation tier badges |
+| **Hedera Consensus Service (HCS)** | Writes an immutable, timestamped audit log of every join, payment, slash, and payout |
+| **Hedera Mirror Node** | Provides free, fast reputation & ledger history queries without extra gas |
+| **Native PRNG** | Fair, verifiable random *tirage* (seat draw) so nobody can rig the payout order |
+| **Fixed Low Fees & Fast Finality** | `~$0.0001` fees and `3–5s` finality keep micro-savings (`20–2,000 MAD`) viable |
+
+---
+
+## Repository Structure
 
 ```text
 hedera/
-├── DESIGN.md                          # Unified Porcelain Light Glass × Escrow Six-Pack design system
-├── PRODUCT.md                         # Product scope, invariants, reputation tiers & regulatory boundaries
-├── README.md                          # Workspace index (this file)
-├── docs/                              # Official challenge & project reference PDFs
-│   ├── Daret_on_Hedera_Project_Overview (1).pdf
-│   └── hedera_cross_campus_challenge_submission_guidelines.pdf
-├── v2/                                # Active v2 unified Porcelain Light Glass × Escrow Six-Pack deliverables
-│   ├── showcase-website/              # Unified Showcase + PoC Console app (compiled & integrated)
-│   ├── poc-app/                       # Standalone Functional Daret PoC Console source
-│   ├── daret-unified-app/             # Clean mirrored unified app + quick-launch scripts (no node_modules)
-│   ├── presentation/                  # V2 Pitch Deck scripts & exports
-│   └── assets/                        # Shared light-mode visual assets & slide renders
-├── daret-on-hedera-v2.zip             # Self-contained shareable group package (unified app + dist + docs)
-├── archive/                           # Superseded v1 artifacts preserved for reference
-│   ├── websites/
-│   │   ├── showcase-v1/               # Original dark-theme Showcase website & build
-│   │   └── poc-app-v1/                # Original daret-app PoC console & build
-│   ├── decks/                         # Earlier Pitch, Website Theme & Light Glass PPTX/PDF exports
-│   └── packages/                      # Earlier packaged release zip (`daret-on-hedera.zip`)
-├── .impeccable/                       # Design direction contract & visual mock explorations
-└── .agents/                           # Agent tooling & cached Markdown extractions
+├── app/                   # Unified Web App (Showcase, Simulator & Live PoC Console)
+│   ├── src/               # Showcase sections, Live Daret Simulator & PoC Console (src/poc/)
+│   ├── public/assets/     # Visual assets
+│   ├── start-app.bat      # Windows quick-launch script
+│   └── start-app.sh       # macOS / Linux quick-launch script
+├── presentation/          # Pitch deck (PDF & PPTX)
+├── docs/                  # Challenge guidelines & project overview PDFs
+├── PRODUCT.md             # Product scope, invariants, reputation tiers & regulatory notes
+├── DESIGN.md              # UI design system & visual tokens
+└── README.md              # Project overview & setup guide (this file)
 ```
 
 ---
 
-## Running the Unified V2 Web Application Locally
+## Quick Start (Run the Web App Locally)
 
-Both V2 web surfaces (**1. How It Works** showcase/simulator and **2. Try Live Demo** PoC console) are now compiled into a single unified Vite + React + TypeScript application inside `v2/showcase-website/` (and mirrored cleanly without `node_modules` in `v2/daret-unified-app/` and packaged in `daret-on-hedera-v2.zip`).
+The `app/` directory contains both the **Showcase & Interactive Simulator** and the **Live Functional PoC Console** in a single Vite + React + TypeScript application.
 
-### Quick Launch (Pre-compiled `dist/`)
-Inside `v2/daret-unified-app/` (or after unzipping `daret-on-hedera-v2.zip`):
-- **Windows:** Double-click `start-app.bat`
-- **macOS / Linux:** Run `./start-app.sh`
-
-### From Source (`v2/showcase-website/` or `v2/daret-unified-app/`)
 ```powershell
-cd v2/showcase-website
-npm.cmd install        # only if node_modules is missing
-npm.cmd run dev        # local dev server (includes both Showcase + Live Demo views)
-npm.cmd run build      # TypeScript check + production build into dist/
+cd app
+npm install
+npm run dev
 ```
 
-### Standalone PoC Console Source (`v2/poc-app/`, kept for reference)
+Then open the local URL printed in your terminal (default `http://127.0.0.1:5173`).
+
+To create a production build:
+
 ```powershell
-cd v2/poc-app
-npm.cmd install
-npm.cmd run dev
+cd app
+npm run build
 ```
+
+> **Note:** On Windows, if `dist/` is already built, you can also double-click `app/start-app.bat` (or run `./app/start-app.sh` on macOS/Linux).
 
 ---
 
-## Key Reference Documents
+## Reference Documents
 
-- [`PRODUCT.md`](PRODUCT.md) — Core product principles, confirmed reputation tiers (`Gold` 25%, `Silver` 50%, `Bronze` 75%, `New` 100%, `Defaulter` 100%/blocked), and testnet PoC scope.
-- [`docs/Daret_on_Hedera_Project_Overview (1).pdf`](docs/Daret_on_Hedera_Project_Overview%20%281%29.pdf) — Collateral math `(N - k) × C`, 6-service Hedera stack, revenue streams, unit economics (`10 × 500 MAD = 50,000 MAD/cycle`), and `4 × 250 MAD` slash demo script.
-- [`docs/hedera_cross_campus_challenge_submission_guidelines.pdf`](docs/hedera_cross_campus_challenge_submission_guidelines.pdf) — Judging weights (`25%` Meaningful Hedera Integration, `20%` Technical Execution, `15%` Problem, `15%` Innovation, `15%` Impact, `10%` Pitch/Demo), 7-slide pitch structure, and 4Hacks submission checklist.
+- [`PRODUCT.md`](PRODUCT.md) — Product principles, confirmed tier thresholds, and testnet PoC / regulatory boundaries.
+- [`DESIGN.md`](DESIGN.md) — Porcelain Light Glass × Escrow Six-Pack design tokens and component specs.
+- [`presentation/Daret_on_Hedera_V2.pdf`](presentation/Daret_on_Hedera_V2.pdf) — 7-slide pitch deck.
+- [`docs/Daret_on_Hedera_Project_Overview (1).pdf`](docs/Daret_on_Hedera_Project_Overview%20%281%29.pdf) — Detailed math, unit economics, and `4 × 250 MAD` slash demo script.
+- [`docs/hedera_cross_campus_challenge_submission_guidelines.pdf`](docs/hedera_cross_campus_challenge_submission_guidelines.pdf) — Official 4Hacks judging criteria and submission checklist.

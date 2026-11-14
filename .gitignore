@@ -6,16 +6,19 @@ node_modules/
 .env.local
 .env.*.local
 
-# Build outputs
+# Build outputs & caches
 dist/
 build/
 .next/
 out/
+*.tsbuildinfo
 
 # Logs & OS files
 *.log
 .DS_Store
 Thumbs.db
 
-# Archives
+# Archives & local agent/tool caches
 *.zip
+.agents/
+.impeccable/
