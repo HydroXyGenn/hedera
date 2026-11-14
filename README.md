@@ -1,5 +1,7 @@
 # Daret on Hedera
 
+**Live App:** [https://daret-on-hedera.vercel.app/](https://daret-on-hedera.vercel.app/)
+
 > *"The code becomes the organizer. Money and rules are enforced by Hedera, so nobody can run away with the pot, and every payment is publicly provable."*
 
 Built for the **Hedera Cross Campus Challenge 2026** (*Dar Blockchain × Hedera · 4Hacks*).
